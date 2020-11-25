@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -45,8 +47,11 @@ func main() {
 		fmt.Printf(" - URL: %s\n", d.URL)
 		fmt.Printf(" - Sha1: %s\n", d.Sha1)
 		fmt.Printf(" - Size: %v\n", d.Size)
-		downloadjar(versionid, d.URL)
-		fmt.Printf("File saved :)\n")
+		outputsize := downloadjar(versionid, d)
+		if outputsize != 0 {
+			fmt.Printf("File saved :)\n")
+		}
+		return
 	}
 
 	// Details options
@@ -93,6 +98,7 @@ func main() {
 		fmt.Printf(" - URL: %s\n", v.GetServer().URL)
 		fmt.Printf(" - Sha1: %s\n", v.GetServer().Sha1)
 		fmt.Printf(" - Size: %v\n", v.GetServer().Size)
+		return
 	}
 
 	// Help options
@@ -100,13 +106,14 @@ func main() {
 		fmt.Printf("mcversions all - List all version ids\n")
 		fmt.Printf("mcversions <version id/release/snapshot> - Get details about the version\n")
 		fmt.Printf("mcversions <version id/release/snapshot> <client/server> - Download the client/server jar\n")
+		return
 	}
 }
 
-func downloadjar(id string, url string) int64 {
-	filename := id + "-" + path.Base(url)
+func downloadjar(id string, dd mcversions.APIDownloadData) int64 {
+	filename := id + "-" + path.Base(dd.URL)
 	_, err := os.Stat(filename)
-	if os.IsExist(err) {
+	if !os.IsNotExist(err) {
 		fmt.Printf("Error: file already exists\n")
 		return 0
 	}
@@ -116,15 +123,37 @@ func downloadjar(id string, url string) int64 {
 		fmt.Printf("Error creating output file\n")
 		return 0
 	}
-	resp, err := http.Get("http://example.com/")
+	resp, err := http.Get(dd.URL)
 	if err != nil {
 		fmt.Printf("Error starting download\n")
 		return 0
 	}
 	defer resp.Body.Close()
-	n, err := io.Copy(out, resp.Body)
+
+	h := sha1.New()
+
+	// Connect 'out' and 'h' as a single writer
+	w := io.MultiWriter(out, h)
+
+	n, err := io.Copy(w, resp.Body)
 	if err != nil {
 		fmt.Printf("Error during download\n")
+		return 0
+	}
+
+	if n == dd.Size {
+		fmt.Printf("Download size matches\n")
+	} else {
+		fmt.Printf("Incorrect download size\n")
+		return 0
+	}
+
+	sha1str := h.Sum(nil)
+	if hex.EncodeToString(sha1str) == dd.Sha1 {
+		fmt.Printf("Sha1 hashes match so the download is probably safe\n")
+	} else {
+		fmt.Printf("Sha1 hashes don't match... deleting it for your safety\n")
+		os.Remove(filename)
 		return 0
 	}
 	return n
