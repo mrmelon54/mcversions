@@ -87,10 +87,10 @@ func (mcv *MCVersions) GetLatestSnapshot() string {
 }
 
 // List is used to get a list of all valid version ids.
-func (mcv *MCVersions) List() []string {
-	ids := make([]string, len(mcv.data.Versions))
+func (mcv *MCVersions) List() []APIVersionData {
+	ids := make([]APIVersionData, len(mcv.data.Versions))
 	for i := 0; i < len(mcv.data.Versions); i++ {
-		ids[i] = mcv.data.Versions[i].ID
+		ids[i] = mcv.data.Versions[i]
 	}
 	return ids
 }

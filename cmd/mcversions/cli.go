@@ -17,6 +17,23 @@ func main() {
 
 	// Download options
 	if len(os.Args) == 3 {
+		// List versions
+		if os.Args[1] == "list" {
+			mcv, err := mcversions.NewMCVersions()
+			if err != nil {
+				fmt.Printf("Failed to load Minecraft versions\n")
+				return
+			}
+			fmt.Printf("Minecraft versions list:\n")
+			versions := mcv.List()
+			for i := 0; i < len(versions); i++ {
+				if os.Args[2] == "all" || versions[i].Type == os.Args[2] {
+					fmt.Printf(" - %s %s\n", versions[i].Type, versions[i].ID)
+				}
+			}
+			return
+		}
+
 		if os.Args[2] != "client" && os.Args[2] != "server" {
 			fmt.Printf("Invalid option for download: use 'client' or 'server'.\n")
 			return
@@ -56,18 +73,8 @@ func main() {
 
 	// Details options
 	if len(os.Args) == 2 {
-		// List all
-		if os.Args[1] == "all" {
-			mcv, err := mcversions.NewMCVersions()
-			if err != nil {
-				fmt.Printf("Failed to load Minecraft versions\n")
-				return
-			}
-			fmt.Printf("Minecraft versions list:\n")
-			versions := mcv.List()
-			for i := 0; i < len(versions); i++ {
-				fmt.Printf(" - %s\n", versions[i])
-			}
+		if os.Args[1] == "list" {
+			fmt.Printf("Usage 'mcversions list <all/release/snapshot/old_alpha/old_beta>'\n")
 			return
 		}
 
@@ -103,7 +110,7 @@ func main() {
 
 	// Help options
 	if len(os.Args) == 1 {
-		fmt.Printf("mcversions all - List all version ids\n")
+		fmt.Printf("mcversions list <all/release/snapshot/old_alpha/old_beta> - List all versions of the specified type\n")
 		fmt.Printf("mcversions <version id/release/snapshot> - Get details about the version\n")
 		fmt.Printf("mcversions <version id/release/snapshot> <client/server> - Download the client/server jar\n")
 		return
