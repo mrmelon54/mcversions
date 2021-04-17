@@ -1,3 +1,0 @@
-#!/bin/bash
-go build -o go-mcversions ./cmd/mcversions
-sudo cp ./go-mcversions /usr/bin/mcversions

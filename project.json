@@ -1,0 +1,9 @@
+{
+  "Package": "mcversions",
+  "Version": "1.0-1",
+  "Section": "base",
+  "Priority": "optional",
+  "Architecture": "amd64",
+  "Maintainer": "MrMelon54 <github@onpointcoding.net>",
+  "Description": "List and download Minecraft jar files"
+}
