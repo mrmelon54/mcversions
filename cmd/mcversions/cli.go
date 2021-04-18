@@ -115,7 +115,7 @@ func main() {
 
 	// Help options
 	if len(os.Args) == 1 {
-		fmt.Printf("mcversions list <all/release/snapshot/old_alpha/old_beta> - List all versions of the specified type\n")
+		fmt.Printf("mcversions list <all/release/snapshot/old_alpha/old_beta/pattern> - List all versions of the specified type\n")
 		fmt.Printf("mcversions <version id/release/snapshot> - Get details about the version\n")
 		fmt.Printf("mcversions <version id/release/snapshot> <client/server> - Download the client/server jar\n")
 		return
@@ -130,14 +130,15 @@ func downloadjar(id string, dd mcversions.APIDownloadData) int64 {
 		return 0
 	}
 	out, err := os.Create(filename)
-	defer out.Close()
 	if err != nil {
 		fmt.Printf("Error creating output file\n")
+		out.Close()
 		return 0
 	}
 	resp, err := http.Get(dd.URL)
 	if err != nil {
 		fmt.Printf("Error starting download\n")
+		out.Close()
 		return 0
 	}
 	defer resp.Body.Close()
@@ -150,8 +151,11 @@ func downloadjar(id string, dd mcversions.APIDownloadData) int64 {
 	n, err := io.Copy(w, resp.Body)
 	if err != nil {
 		fmt.Printf("Error during download\n")
+		out.Close()
 		return 0
 	}
+
+	out.Close()
 
 	if n == dd.Size {
 		fmt.Printf("Download size matches\n")
