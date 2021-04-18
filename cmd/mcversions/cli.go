@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"regexp"
+	"strings"
 
 	mcversions "codehub.onpointcoding.net/sean/go-mcversions"
 )
@@ -19,6 +21,8 @@ func main() {
 	if len(os.Args) == 3 {
 		// List versions
 		if os.Args[1] == "list" {
+			os.Args[2] = "^" + strings.ReplaceAll(regexp.QuoteMeta(os.Args[2]), "\\*", ".*?") + "$"
+
 			mcv, err := mcversions.NewMCVersions()
 			if err != nil {
 				fmt.Printf("Failed to load Minecraft versions\n")
@@ -27,7 +31,8 @@ func main() {
 			fmt.Printf("Minecraft versions list:\n")
 			versions := mcv.List()
 			for i := 0; i < len(versions); i++ {
-				if os.Args[2] == "all" || versions[i].Type == os.Args[2] {
+				matched, _ := regexp.MatchString(os.Args[2], versions[i].ID)
+				if os.Args[2] == "all" || versions[i].Type == os.Args[2] || matched {
 					fmt.Printf(" - %s %s\n", versions[i].Type, versions[i].ID)
 				}
 			}
@@ -74,7 +79,7 @@ func main() {
 	// Details options
 	if len(os.Args) == 2 {
 		if os.Args[1] == "list" {
-			fmt.Printf("Usage 'mcversions list <all/release/snapshot/old_alpha/old_beta>'\n")
+			fmt.Printf("Usage 'mcversions list <all/release/snapshot/old_alpha/old_beta/pattern>'\n")
 			return
 		}
 

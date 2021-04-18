@@ -3,10 +3,11 @@ SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname $SCRIPT`
 PROJECT_DIR=`dirname $SCRIPTPATH`
 PROJECT_DAT=`cat $PROJECT_DIR/project.json`
+PROJECT_NAM=`echo $PROJECT_DAT | jq .Package -r`
 PROJECT_VER=`echo $PROJECT_DAT | jq .Version -r`
 
 echo
-echo "Packaging mcversions v$PROJECT_VER"
+echo "Packaging $PROJECT_NAM v$PROJECT_VER"
 echo
 
 INSTALL_DIR="/usr/bin"
@@ -16,7 +17,7 @@ echo "Using the following folders for install"
 echo "PROJECT_DIR: $PROJECT_DIR"
 echo "INSTALL_DIR: $INSTALL_DIR"
 
-PACK="$PROJECT_DIR/package/mcversions_1.0-1"
+PACK="${PROJECT_DIR}/package/${PROJECT_NAM}_${PROJECT_VER}"
 PACK_BIN=$(realpath -sm "$PACK/$INSTALL_DIR")
 PACK_DEB=$(realpath -sm "$PACK/DEBIAN")
 mkdir -p "$PACK"
