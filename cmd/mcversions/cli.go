@@ -21,7 +21,7 @@ func main() {
 	if len(os.Args) == 3 {
 		// List versions
 		if os.Args[1] == "list" {
-			os.Args[2] = "^" + strings.ReplaceAll(regexp.QuoteMeta(os.Args[2]), "\\*", ".*?") + "$"
+			reg := "^" + strings.ReplaceAll(regexp.QuoteMeta(os.Args[2]), "\\*", ".*?") + "$"
 
 			mcv, err := mcversions.NewMCVersions()
 			if err != nil {
@@ -31,7 +31,7 @@ func main() {
 			fmt.Printf("Minecraft versions list:\n")
 			versions := mcv.List()
 			for i := 0; i < len(versions); i++ {
-				matched, _ := regexp.MatchString(os.Args[2], versions[i].ID)
+				matched, _ := regexp.MatchString(reg, versions[i].ID)
 				if os.Args[2] == "all" || versions[i].Type == os.Args[2] || matched {
 					fmt.Printf(" - %s %s\n", versions[i].Type, versions[i].ID)
 				}
