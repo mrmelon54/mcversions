@@ -1,6 +1,6 @@
 {
   "Package": "mcversions",
-  "Version": "1.0-3",
+  "Version": "1.0-4",
   "Section": "base",
   "Priority": "optional",
   "Architecture": "amd64",
