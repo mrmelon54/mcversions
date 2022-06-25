@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	mcversions "codehub.onpointcoding.net/sean/go-mcversions"
+	"code.mrmelon54.xyz/sean/go-mcversions"
 )
 
 func main() {
@@ -48,13 +48,13 @@ func main() {
 			fmt.Printf("Failed to load Minecraft versions\n")
 			return
 		}
-		versionid := os.Args[1]
+		versionId := os.Args[1]
 		if os.Args[1] == "release" {
-			versionid = mcv.GetLatestRelease()
+			versionId = mcv.GetLatestRelease()
 		} else if os.Args[1] == "snapshot" {
-			versionid = mcv.GetLatestSnapshot()
+			versionId = mcv.GetLatestSnapshot()
 		}
-		v, err := mcv.Get(versionid)
+		v, err := mcv.Get(versionId)
 		if err != nil {
 			fmt.Printf("Failed to get version information\n")
 			return
@@ -69,7 +69,7 @@ func main() {
 		fmt.Printf(" - URL: %s\n", d.URL)
 		fmt.Printf(" - Sha1: %s\n", d.Sha1)
 		fmt.Printf(" - Size: %v\n", d.Size)
-		outputsize := downloadjar(versionid, d)
+		outputsize := downloadJar(versionId, d)
 		if outputsize != 0 {
 			fmt.Printf("File saved :)\n")
 		}
@@ -122,7 +122,7 @@ func main() {
 	}
 }
 
-func downloadjar(id string, dd mcversions.APIDownloadData) int64 {
+func downloadJar(id string, dd mcversions.APIDownloadData) int64 {
 	filename := id + "-" + path.Base(dd.URL)
 	_, err := os.Stat(filename)
 	if !os.IsNotExist(err) {
@@ -132,16 +132,19 @@ func downloadjar(id string, dd mcversions.APIDownloadData) int64 {
 	out, err := os.Create(filename)
 	if err != nil {
 		fmt.Printf("Error creating output file\n")
-		out.Close()
 		return 0
 	}
+	defer func(out *os.File) {
+		_ = out.Close()
+	}(out)
 	resp, err := http.Get(dd.URL)
 	if err != nil {
 		fmt.Printf("Error starting download\n")
-		out.Close()
 		return 0
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 
 	h := sha1.New()
 
@@ -151,11 +154,11 @@ func downloadjar(id string, dd mcversions.APIDownloadData) int64 {
 	n, err := io.Copy(w, resp.Body)
 	if err != nil {
 		fmt.Printf("Error during download\n")
-		out.Close()
 		return 0
 	}
-
-	out.Close()
+	defer func(out *os.File) {
+		_ = out.Close()
+	}(out)
 
 	if n == dd.Size {
 		fmt.Printf("Download size matches\n")
@@ -169,7 +172,11 @@ func downloadjar(id string, dd mcversions.APIDownloadData) int64 {
 		fmt.Printf("Sha1 hashes match so the download is probably safe\n")
 	} else {
 		fmt.Printf("Sha1 hashes don't match... deleting it for your safety\n")
-		os.Remove(filename)
+		err = os.Remove(filename)
+		if err != nil {
+			fmt.Println("Failed to remove the unsafe file:", err)
+			return 0
+		}
 		return 0
 	}
 	return n
