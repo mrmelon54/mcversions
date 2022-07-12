@@ -1,38 +1,26 @@
 package mcversions
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 )
 
 // Request is used for downloading json data.
-func Request(url string) ([]byte, error) {
-	var body []byte
-
-	mcversionsClient := http.Client{
-		Timeout: time.Second * 2,
-	}
+func Request(url string) (io.ReadCloser, error) {
+	mcVersionsClient := http.Client{Timeout: time.Second * 2}
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return body, err
+		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "mcversions")
+	req.Header.Set("User-Agent", "mcversions/1.0")
 
-	res, err := mcversionsClient.Do(req)
+	res, err := mcVersionsClient.Do(req)
 	if err != nil {
-		return body, err
+		return nil, err
 	}
 
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
-
-	body, err = ioutil.ReadAll(res.Body)
-	if err != nil {
-		return body, err
-	}
-	return body, nil
+	return res.Body, nil
 }

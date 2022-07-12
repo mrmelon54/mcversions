@@ -4,13 +4,16 @@ import "encoding/json"
 
 // APIDownloadResponse is used to parse the data from the api.
 type APIDownloadResponse struct {
-	Downloads struct {
-		Client APIDownloadData `json:"client"`
-		Server APIDownloadData `json:"server"`
-	} `json:"downloads"`
-	ID          string `json:"id"`
-	ReleaseTime string `json:"releaseTime"`
-	Type        string `json:"type"`
+	Downloads   APIDownloads `json:"downloads"`
+	ID          string       `json:"id"`
+	ReleaseTime string       `json:"releaseTime"`
+	Type        string       `json:"type"`
+}
+
+// APIDownloads is used to store the client and server download information
+type APIDownloads struct {
+	Client APIDownloadData `json:"client"`
+	Server APIDownloadData `json:"server"`
 }
 
 // APIDownloadData is used to store download objects.
@@ -29,16 +32,12 @@ func (vd *MCVersionDownloads) grab(url string) (*APIDownloadResponse, error) {
 	var err error
 	data := &APIDownloadResponse{}
 
-	bytes, err := Request(url)
+	body, err := Request(url)
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(bytes, data)
-	if err != nil {
-		return nil, err
-	}
-
+	err = json.NewDecoder(body).Decode(&data)
 	return data, err
 }
 

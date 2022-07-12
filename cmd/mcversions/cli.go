@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,7 +16,17 @@ import (
 )
 
 func main() {
-	fmt.Printf("Minecraft Version Lookup -- by MrMelon\n")
+	var interactive bool
+	var jsonOutput bool
+	var listType string
+
+	flag.BoolVar(&interactive, "i", false, "Run in interactive mode")
+	flag.BoolVar(&jsonOutput, "j", false, "Outputs raw json data")
+	flag.StringVar(&listType, "l", "", "Specifies the versions to list")
+
+	if !jsonOutput {
+		fmt.Printf("Minecraft Version Lookup -- by MrMelon\n")
+	}
 
 	// Download options
 	if len(os.Args) == 3 {
@@ -25,7 +36,7 @@ func main() {
 
 			mcv, err := mcversions.NewMCVersions()
 			if err != nil {
-				fmt.Printf("Failed to load Minecraft versions\n")
+				fmt.Printf("Failed to load Minecraft versions: %s\n", err)
 				return
 			}
 			fmt.Printf("Minecraft versions list:\n")
