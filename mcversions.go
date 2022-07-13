@@ -1,8 +1,8 @@
 package mcversions
 
 import (
+	"code.mrmelon54.xyz/sean/go-mcversions/structure"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/wessie/appdirs"
 	"io"
@@ -11,27 +11,7 @@ import (
 	"time"
 )
 
-// APIResponse is used to parse the data from the api.
-type APIResponse struct {
-	Expires  time.Time        `json:"expires"`
-	Latest   APILatestVersion `json:"latest"`
-	Versions []APIVersionData `json:"versions"`
-}
-
-// APILatestVersion used to store the latest release and snapshot versions
-type APILatestVersion struct {
-	Release  string `json:"release"`
-	Snapshot string `json:"snapshot"`
-}
-
-// APIVersionData is used to store version objects.
-type APIVersionData struct {
-	ID          string `json:"id"`
-	Type        string `json:"type"`
-	URL         string `json:"url"`
-	Time        string `json:"time"`
-	ReleaseTime string `json:"releaseTime"`
-}
+const launcherMetaEndpoint = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
 
 // NewMCVersions creates an MCVersions instance.
 func NewMCVersions() (*MCVersions, error) {
@@ -43,7 +23,7 @@ func NewMCVersions() (*MCVersions, error) {
 // MCVersions is the main struct for API requests.
 type MCVersions struct {
 	app  *appdirs.App
-	data *APIResponse
+	data *structure.APIResponse
 }
 
 func (mcv *MCVersions) checkMemCache() error {
@@ -107,7 +87,7 @@ func (mcv *MCVersions) Load() error {
 	}(body)
 
 	// Decode the data
-	data := APIResponse{}
+	data := structure.APIResponse{}
 	err = json.NewDecoder(body).Decode(&data)
 	if err != nil {
 		return err
@@ -123,7 +103,7 @@ func (mcv *MCVersions) Load() error {
 
 func (mcv *MCVersions) Fetch() error {
 	// Make request for new version manifest
-	body, err := Request("https://launchermeta.mojang.com/mc/game/version_manifest.json")
+	body, err := Request(launcherMetaEndpoint)
 	if err != nil {
 		return err
 	}
@@ -133,7 +113,7 @@ func (mcv *MCVersions) Fetch() error {
 	}(body)
 
 	// Decode the data
-	data := APIResponse{}
+	data := structure.APIResponse{}
 	err = json.NewDecoder(body).Decode(&data)
 	if err != nil {
 		return err
@@ -162,45 +142,25 @@ func (mcv *MCVersions) Fetch() error {
 	return nil
 }
 
-// Get is used to get a version by id.
-func (mcv *MCVersions) Get(id string) (*MCVersionDownloads, error) {
+// GetVersion is used to get a version by id.
+func (mcv *MCVersions) GetVersion(id string) (*structure.APIVersionData, error) {
 	if err := mcv.checkMemCache(); err != nil {
 		return nil, err
 	}
 
-	mcVd := &MCVersionDownloads{}
-	versionUrl := ""
+	var version *structure.APIVersionData
 	for i := 0; i < len(mcv.data.Versions); i++ {
 		if mcv.data.Versions[i].ID == id {
-			versionUrl = mcv.data.Versions[i].URL
+			version = mcv.data.Versions[i]
 		}
 	}
-	if versionUrl == "" {
-		return nil, errors.New("Missing version")
-	}
-	var err error
-	mcVd.data, err = mcVd.grab(versionUrl)
-	if err != nil {
+	return version, nil
+}
+
+// ListVersions is used to get a list of all valid version ids.
+func (mcv *MCVersions) ListVersions() ([]*structure.APIVersionData, error) {
+	if err := mcv.checkMemCache(); err != nil {
 		return nil, err
 	}
-	return mcVd, nil
-}
-
-// GetLatestRelease is used to get the id for the latest release.
-func (mcv *MCVersions) GetLatestRelease() string {
-	return mcv.data.Latest.Release
-}
-
-// GetLatestSnapshot is used to get the id for the latest snapshot.
-func (mcv *MCVersions) GetLatestSnapshot() string {
-	return mcv.data.Latest.Snapshot
-}
-
-// List is used to get a list of all valid version ids.
-func (mcv *MCVersions) List() []APIVersionData {
-	ids := make([]APIVersionData, len(mcv.data.Versions))
-	for i := 0; i < len(mcv.data.Versions); i++ {
-		ids[i] = mcv.data.Versions[i]
-	}
-	return ids
+	return mcv.data.Versions, nil
 }
