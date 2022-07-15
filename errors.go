@@ -1,6 +1,8 @@
 package mcversions
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	// ErrCacheMissing can usually be fixed by calling MCVersions.Grab()

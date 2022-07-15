@@ -17,20 +17,27 @@ const launcherMetaEndpoint = "https://launchermeta.mojang.com/mc/game/version_ma
 func NewMCVersions() (*MCVersions, error) {
 	data := &MCVersions{}
 	data.app = appdirs.New("mcversions", "MrMelon54", "")
+	data.latest = new(MCVersionLatest)
 	return data, nil
 }
 
 // MCVersions is the main struct for API requests.
 type MCVersions struct {
-	app  *appdirs.App
-	data *structure.APIResponse
+	app    *appdirs.App
+	data   *structure.PistonMetaVersionManifest
+	latest *MCVersionLatest
+}
+
+type MCVersionLatest struct {
+	release  *structure.PistonMetaVersionData
+	snapshot *structure.PistonMetaVersionData
 }
 
 func (mcv *MCVersions) checkMemCache() error {
 	if mcv.data == nil {
 		return ErrCacheMissing
 	}
-	if mcv.data.Expires.After(time.Now()) {
+	if time.Now().After(mcv.data.Expires) {
 		return ErrCacheExpired
 	}
 	return nil
@@ -79,7 +86,7 @@ func (mcv *MCVersions) Load() error {
 	// Find and open the cache file
 	body, err := mcv.openCacheFile(false)
 	if err != nil {
-		return err
+		return ErrCacheMissing
 	}
 
 	defer func(body io.Closer) {
@@ -87,15 +94,15 @@ func (mcv *MCVersions) Load() error {
 	}(body)
 
 	// Decode the data
-	data := structure.APIResponse{}
+	data := structure.PistonMetaVersionManifest{}
 	err = json.NewDecoder(body).Decode(&data)
 	if err != nil {
-		return err
+		return ErrCacheMissing
 	}
 
 	// Check is cache is outdated
-	if data.Expires.After(time.Now()) {
-		return fmt.Errorf("cache end time '%s' is after the current time", data.Expires.Format(time.UnixDate))
+	if time.Now().After(data.Expires) {
+		return ErrCacheExpired
 	}
 	mcv.data = &data
 	return nil
@@ -113,7 +120,7 @@ func (mcv *MCVersions) Fetch() error {
 	}(body)
 
 	// Decode the data
-	data := structure.APIResponse{}
+	data := structure.PistonMetaVersionManifest{}
 	err = json.NewDecoder(body).Decode(&data)
 	if err != nil {
 		return err
@@ -143,12 +150,12 @@ func (mcv *MCVersions) Fetch() error {
 }
 
 // GetVersion is used to get a version by id.
-func (mcv *MCVersions) GetVersion(id string) (*structure.APIVersionData, error) {
+func (mcv *MCVersions) GetVersion(id string) (*structure.PistonMetaVersionData, error) {
 	if err := mcv.checkMemCache(); err != nil {
 		return nil, err
 	}
 
-	var version *structure.APIVersionData
+	var version *structure.PistonMetaVersionData
 	for i := 0; i < len(mcv.data.Versions); i++ {
 		if mcv.data.Versions[i].ID == id {
 			version = mcv.data.Versions[i]
@@ -158,9 +165,29 @@ func (mcv *MCVersions) GetVersion(id string) (*structure.APIVersionData, error) 
 }
 
 // ListVersions is used to get a list of all valid version ids.
-func (mcv *MCVersions) ListVersions() ([]*structure.APIVersionData, error) {
+func (mcv *MCVersions) ListVersions() ([]*structure.PistonMetaVersionData, error) {
 	if err := mcv.checkMemCache(); err != nil {
 		return nil, err
 	}
 	return mcv.data.Versions, nil
+}
+
+func (mcv *MCVersions) LatestRelease() (_ *structure.PistonMetaVersionData, err error) {
+	if err := mcv.checkMemCache(); err != nil {
+		return nil, err
+	}
+	if mcv.latest.release == nil {
+		mcv.latest.release, err = mcv.GetVersion(mcv.data.Latest.Release)
+	}
+	return mcv.latest.release, err
+}
+
+func (mcv *MCVersions) LatestSnapshot() (_ *structure.PistonMetaVersionData, err error) {
+	if err := mcv.checkMemCache(); err != nil {
+		return nil, err
+	}
+	if mcv.latest.snapshot == nil {
+		mcv.latest.snapshot, err = mcv.GetVersion(mcv.data.Latest.Snapshot)
+	}
+	return mcv.latest.snapshot, err
 }

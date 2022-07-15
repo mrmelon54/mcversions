@@ -18,17 +18,30 @@ func rawMode(f cliFlags) {
 	switch {
 	case f.listAction:
 		listAction(f)
+	case f.infoAction:
+		infoAction(f)
 	case f.dlAction:
 		dlAction(f)
 	}
 }
 
 func listAction(f cliFlags) {
-	reg := "^" + strings.ReplaceAll(regexp.QuoteMeta(os.Args[2]), "\\*", ".*?") + "$"
+	if f.pattern == "" {
+		fmt.Println("Set a pattern to find matching versions")
+		fmt.Println("  mcversions -list -v 1.18*")
+		fmt.Println("  mcversions -list -v 1.16-*")
+		return
+	}
+	reg := "^" + strings.ReplaceAll(regexp.QuoteMeta(f.pattern), "\\*", ".*?") + "$"
 
 	mcv, err := mcversions.NewMCVersions()
 	if err != nil {
 		fmt.Printf("Failed to load Minecraft versions: %s\n", err)
+		return
+	}
+	err = mcv.Grab()
+	if err != nil {
+		fmt.Printf("Failed to get version metadata: %s\n", err)
 		return
 	}
 	fmt.Printf("Minecraft versions list:\n")
@@ -45,8 +58,38 @@ func listAction(f cliFlags) {
 	}
 }
 
+func infoAction(f cliFlags) {
+	if f.pattern == "" {
+		fmt.Println("Set a version ID")
+		fmt.Println("  mcversions -info -v 1.18.2")
+		fmt.Println("  mcversions -info -v 1.16.5")
+		return
+	}
+
+	mcv, err := mcversions.NewMCVersions()
+	if err != nil {
+		fmt.Printf("Failed to load Minecraft versions: %s\n", err)
+		return
+	}
+	err = mcv.Grab()
+	if err != nil {
+		fmt.Printf("Failed to get version metadata: %s\n", err)
+		return
+	}
+	fmt.Printf("Minecraft version info:\n")
+	version, err := mcv.GetVersion(f.pattern)
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+	fmt.Printf("  ID: %s\n", version.ID)
+	fmt.Printf("  Type: %s\n", version.Type)
+	fmt.Printf("  Time: %s\n", version.Time)
+	fmt.Printf("  Release Time: %s\n", version.ReleaseTime)
+}
+
 func dlAction(f cliFlags) {
-	var version *structure.APIVersionData
+	var version *structure.PistonMetaVersionData
 	var err error
 	switch f.pattern {
 	case "release":
@@ -81,7 +124,7 @@ func dlAction(f cliFlags) {
 	}
 }
 
-func downloadJar(id string, dd structure.APIDownloadData) int64 {
+func downloadJar(id string, dd structure.PistonMetaPackageDownloadsData) int64 {
 	filename := id + "-" + path.Base(dd.URL)
 	_, err := os.Stat(filename)
 	if !os.IsNotExist(err) {

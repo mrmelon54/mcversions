@@ -1,140 +1,104 @@
 package tui
 
 import (
-	"code.mrmelon54.xyz/sean/go-mcversions"
 	"fmt"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
-type loadingState int
-
-const (
-	loadingStateFail loadingState = iota
-	loadingStateDone
-	loadingStateWait
-)
-
-type loadingStateLocalMsg loadingState
-type loadingStateRemoteMsg loadingState
-
-var (
-	crossIcon = lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true).Render("✘")
-	tickIcon  = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true).Render("✔")
-)
-
-type model struct {
-	bg          *modelBg
-	spinner     spinner.Model
-	err         error
-	localState  loadingState
-	remoteState loadingState
-	loadLocal   chan struct{}
-	loadRemote  chan struct{}
+type Model struct {
+	bg         *Background
+	appState   int
+	err        error
+	loadLocal  LoadingModel
+	loadRemote LoadingModel
+	vSelect    VersionSelectModel
 }
 
-type modelBg struct {
-	mcv *mcversions.MCVersions
-}
+type errMsg error
+type loadingStateLocalMsg loadingStateMsg
+type loadingStateRemoteMsg loadingStateMsg
 
-func WelcomeInitialModel() tea.Model {
-	var m model
-	m.spinner = spinner.New()
-	m.spinner.Spinner = spinner.Dot
-	m.spinner.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+func InitialModel(bg *Background) Model {
+	var m Model
+	m.bg = bg
+	m.loadLocal = NewLoadingModel(outputLoadingOptions{
+		"Local cache invalid or outdated",
+		"Loaded local cache",
+		"Finding local cache",
+	})
+	m.loadRemote = NewLoadingModel(outputLoadingOptions{
+		"Failed to load launcher meta",
+		"Loaded launcher meta",
+		"Finding launcher meta",
+	})
+	m.vSelect = NewVersionSelectModel(bg)
 	return m
 }
 
-func (m model) Init() tea.Cmd {
-	return m.spinner.Tick
+func (m Model) Init() tea.Cmd {
+	go m.bg.fetchLocalData()
+	return tea.Batch(m.loadLocal.Init(), m.loadRemote.Init(), m.vSelect.Init())
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.bg == nil {
-		m.bg = new(modelBg)
-		m.bg.mcv, m.err = mcversions.NewMCVersions()
-	}
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEsc, tea.KeyCtrlC:
 			return m, tea.Quit
 		}
-	default:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
+	case loadingStateLocalMsg:
+		m.loadLocal, cmd = m.loadLocal.Update(loadingStateMsg(msg))
+		cmds = append(cmds, cmd)
+		if m.appState == 0 {
+			switch m.loadLocal.state {
+			case loadingStateDone:
+				m.appState = 2
+			case loadingStateFail:
+				m.loadRemote.state = loadingStateWait
+				go m.bg.fetchRemoteData()
+				m.appState = 1
+			}
+		}
+	case loadingStateRemoteMsg:
+		m.loadRemote, cmd = m.loadRemote.Update(loadingStateMsg(msg))
+		cmds = append(cmds, cmd)
+		if m.loadRemote.state == loadingStateDone && m.appState == 1 {
+			m.appState = 2
+		}
+	case errMsg:
+		m.err = msg
+	case spinner.TickMsg:
+		m.loadLocal, cmd = m.loadLocal.Update(msg)
+		cmds = append(cmds, cmd)
+		m.loadRemote, cmd = m.loadRemote.Update(msg)
+		cmds = append(cmds, cmd)
 	}
-	return m, nil
+	if m.appState == 2 {
+		m.vSelect, cmd = m.vSelect.Update(msg)
+		cmds = append(cmds, cmd)
+	}
+	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() (s string) {
+func (m Model) View() (s string) {
 	s += "\n"
 	if m.err != nil {
 		s += fmt.Sprintf("Oh no:\n%s\n\n", m.err.Error())
 		return
 	}
-	s += outputLoadingState(m.localState, outputLoadingOptions{
-		"Local cache invalid or outdated",
-		"Loaded local cache",
-		"Finding local cache",
-		crossIcon,
-		tickIcon,
-		m.spinner.View(),
-	})
-	if m.localState == loadingStateWait {
-		s += "\n\n"
-		return
+	s += m.loadLocal.View()
+	if m.appState > 0 && m.loadRemote.state != loadingStateUnknown {
+		s += "\n"
+		s += m.loadRemote.View()
 	}
-	s += "\n"
-	s += outputLoadingState(m.localState, outputLoadingOptions{
-		"Failed to load launcher meta",
-		"Loaded launcher meta",
-		"Finding launcher meta",
-		crossIcon,
-		tickIcon,
-		m.spinner.View(),
-	})
-	if m.remoteState == loadingStateWait {
+	if m.appState > 1 {
 		s += "\n\n"
-		return
+		s += m.vSelect.View()
 	}
-	s += "\n"
-	s += "  Choose action:"
 	s += "\n\n"
 	return
-}
-
-type outputLoadingOptions struct {
-	failMsg  string
-	doneMsg  string
-	loadMsg  string
-	failIcon string
-	doneIcon string
-	loadIcon string
-}
-
-func outputLoadingState(l loadingState, options outputLoadingOptions) string {
-	switch l {
-	case loadingStateFail:
-		return fmt.Sprintf("  %s %s", options.failIcon, options.failMsg)
-	case loadingStateDone:
-		return fmt.Sprintf("  %s %s", options.doneIcon, options.doneMsg)
-	case loadingStateWait:
-		return fmt.Sprintf("  %s %s", options.loadIcon, options.loadMsg)
-	}
-	return ""
-}
-
-func fetchLocalCache(m model) tea.Cmd {
-	return func() tea.Msg {
-		return loadingStateLocalMsg(loadingStateWait)
-	}
-}
-
-func fetchRemoteData(m model) tea.Cmd {
-	return func() tea.Msg {
-		return loadingStateRemoteMsg(loadingStateWait)
-	}
 }

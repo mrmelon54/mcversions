@@ -6,14 +6,14 @@ import (
 	"os"
 )
 
-func initialModel() tea.Model {
-	return WelcomeInitialModel()
-}
-
 func Launch() {
-	p := tea.NewProgram(initialModel())
+	bg := NewBackground()
+	m := InitialModel(bg)
+	p := tea.NewProgram(m)
+	bg.program = p
 	if err := p.Start(); err != nil {
-		fmt.Println("Oh no!", err)
+		fmt.Printf("Oh no the program crashed!\n\n")
+		fmt.Println(err)
 		os.Exit(1)
 	}
 }

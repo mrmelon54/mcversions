@@ -7,12 +7,12 @@ import (
 
 // MCPistonMeta is the main struct for download API requests.
 type MCPistonMeta struct {
-	data *structure.APIDownloadResponse
+	data *structure.PistonMetaPackage
 }
 
 func NewPistonMeta(url string) (*MCPistonMeta, error) {
 	var err error
-	data := &structure.APIDownloadResponse{}
+	data := &structure.PistonMetaPackage{}
 
 	body, err := Request(url)
 	if err != nil {
@@ -38,12 +38,12 @@ func (pm *MCPistonMeta) GetType() string {
 	return pm.data.Type
 }
 
-// GetClient is used to get the APIDownloadData struct for the client jar.
-func (pm *MCPistonMeta) GetClient() *structure.APIDownloadData {
+// GetClient is used to get the PistonMetaPackageDownloadsData struct for the client jar.
+func (pm *MCPistonMeta) GetClient() *structure.PistonMetaPackageDownloadsData {
 	return pm.data.Downloads.Client
 }
 
-// GetServer is used to get the APIDownloadData struct for the server jar.
-func (pm *MCPistonMeta) GetServer() *structure.APIDownloadData {
+// GetServer is used to get the PistonMetaPackageDownloadsData struct for the server jar.
+func (pm *MCPistonMeta) GetServer() *structure.PistonMetaPackageDownloadsData {
 	return pm.data.Downloads.Server
 }

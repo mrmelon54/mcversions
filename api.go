@@ -45,13 +45,13 @@ func runAndCheckMem(cb func() error) error {
 }
 
 // Version is a utility function to get version download information using the specific ID
-func Version(id string) (*structure.APIVersionData, error) {
+func Version(id string) (*structure.PistonMetaVersionData, error) {
 	mcv, err := checkDefaultMcVersions()
 	if err != nil {
 		return nil, err
 	}
 
-	var data *structure.APIVersionData
+	var data *structure.PistonMetaVersionData
 	err = runAndCheckMem(func() error {
 		data, err = mcv.GetVersion(id)
 		return err
@@ -60,7 +60,7 @@ func Version(id string) (*structure.APIVersionData, error) {
 }
 
 // LatestRelease is a utility function to get the download information for the latest release
-func LatestRelease() (*structure.APIVersionData, error) {
+func LatestRelease() (*structure.PistonMetaVersionData, error) {
 	mcv, err := checkDefaultMcVersions()
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func LatestRelease() (*structure.APIVersionData, error) {
 }
 
 // LatestSnapshot is a utility function to get the download information for the latest snapshot
-func LatestSnapshot() (*structure.APIVersionData, error) {
+func LatestSnapshot() (*structure.PistonMetaVersionData, error) {
 	mcv, err := checkDefaultMcVersions()
 	if err != nil {
 		return nil, err
@@ -78,13 +78,13 @@ func LatestSnapshot() (*structure.APIVersionData, error) {
 }
 
 // ListVersions is a utility function to get the download information for all versions
-func ListVersions() ([]*structure.APIVersionData, error) {
+func ListVersions() ([]*structure.PistonMetaVersionData, error) {
 	mcv, err := checkDefaultMcVersions()
 	if err != nil {
 		return nil, err
 	}
 
-	var data []*structure.APIVersionData
+	var data []*structure.PistonMetaVersionData
 	err = runAndCheckMem(func() error {
 		data, err = mcv.ListVersions()
 		return err
