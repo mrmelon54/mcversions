@@ -9,6 +9,7 @@ type PistonMetaPackage struct {
 	Downloads              *PistonMetaPackageDownloads   `json:"downloads"`
 	ID                     string                        `json:"id"`
 	JavaVersion            *PistonMetaPackageJavaVersion `json:"javaVersion"`
+	Libraries              []*PistonMetaPackageLibrary   `json:"libraries"`
 	MainClass              string                        `json:"mainClass"`
 	MinimumLauncherVersion int                           `json:"minimumLauncherVersion"`
 	ReleaseTime            string                        `json:"releaseTime"`
@@ -18,8 +19,8 @@ type PistonMetaPackage struct {
 
 // PistonMetaPackageArguments is used to store the game and jvm arguments
 type PistonMetaPackageArguments struct {
-	Game any `json:"game"`
-	Jvm  any `json:"jvm"`
+	Game []any `json:"game"`
+	Jvm  []any `json:"jvm"`
 }
 
 // PistonMetaPackageAssetIndex is used to store the asset hashes
@@ -39,15 +40,34 @@ type PistonMetaPackageDownloads struct {
 	ServerMappings *PistonMetaPackageDownloadsData `json:"server_mappings"`
 }
 
+// PistonMetaPackageDownloadsData is used to store download objects.
+type PistonMetaPackageDownloadsData struct {
+	Sha1 string `json:"sha1"`
+	Size int64  `json:"size"`
+	URL  string `json:"url"`
+}
+
 // PistonMetaPackageJavaVersion is used to store the valid Java version
 type PistonMetaPackageJavaVersion struct {
 	Component    string `json:"component"`
 	MajorVersion int    `json:"majorVersion"`
 }
 
-// PistonMetaPackageDownloadsData is used to store download objects.
-type PistonMetaPackageDownloadsData struct {
+// PistonMetaPackageLibrary is used to store the library data
+type PistonMetaPackageLibrary struct {
+	Downloads *PistonMetaPackageLibraryDownload `json:"downloads"`
+	Name      string                            `json:"name"`
+}
+
+// PistonMetaPackageLibraryDownload is used to store the library download
+type PistonMetaPackageLibraryDownload struct {
+	Artifact *PistonMetaPackageLibraryDownloadArtifact `json:"artifact"`
+}
+
+// PistonMetaPackageLibraryDownloadArtifact is used to store the library download artifact
+type PistonMetaPackageLibraryDownloadArtifact struct {
+	Path string `json:"path"`
 	Sha1 string `json:"sha1"`
-	Size int64  `json:"size"`
-	URL  string `json:"url"`
+	Size int    `json:"size"`
+	Url  string `json:"url"`
 }
