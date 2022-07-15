@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const launcherMetaEndpoint = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
+const launcherMetaEndpoint = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 
 // NewMCVersions creates an MCVersions instance.
 func NewMCVersions() (*MCVersions, error) {
