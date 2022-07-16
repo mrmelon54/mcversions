@@ -121,6 +121,7 @@ func (mcv *MCVersions) Fetch() error {
 
 	// Decode the data
 	data := structure.PistonMetaVersionManifest{}
+
 	err = json.NewDecoder(body).Decode(&data)
 	if err != nil {
 		return err
@@ -150,14 +151,14 @@ func (mcv *MCVersions) Fetch() error {
 }
 
 // GetVersion is used to get a version by id.
-func (mcv *MCVersions) GetVersion(id string) (*structure.PistonMetaVersionData, error) {
+func (mcv *MCVersions) GetVersion(id *structure.PistonMetaId) (*structure.PistonMetaVersionData, error) {
 	if err := mcv.checkMemCache(); err != nil {
 		return nil, err
 	}
 
 	var version *structure.PistonMetaVersionData
 	for i := 0; i < len(mcv.data.Versions); i++ {
-		if mcv.data.Versions[i].ID == id {
+		if mcv.data.Versions[i].ID.Equal(id) {
 			version = mcv.data.Versions[i]
 		}
 	}
@@ -190,4 +191,20 @@ func (mcv *MCVersions) LatestSnapshot() (_ *structure.PistonMetaVersionData, err
 		mcv.latest.snapshot, err = mcv.GetVersion(mcv.data.Latest.Snapshot)
 	}
 	return mcv.latest.snapshot, err
+}
+
+func (mcv *MCVersions) GetVersionPackage(id *structure.PistonMetaId) (*structure.PistonMetaPackage, error) {
+	if err := mcv.checkMemCache(); err != nil {
+		return nil, err
+	}
+	version, err := mcv.GetVersion(id)
+	data := &structure.PistonMetaPackage{}
+
+	body, err := Request(version.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.NewDecoder(body).Decode(&data)
+	return data, err
 }

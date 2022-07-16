@@ -1,6 +1,8 @@
 package structure
 
-import "time"
+import (
+	"time"
+)
 
 // PistonMetaVersionManifest is used to parse the data from the api.
 type PistonMetaVersionManifest struct {
@@ -11,17 +13,17 @@ type PistonMetaVersionManifest struct {
 
 // PistonMetaLatestVersion used to store the latest release and snapshot versions
 type PistonMetaLatestVersion struct {
-	Release  string `json:"release"`
-	Snapshot string `json:"snapshot"`
+	Release  *PistonMetaId `json:"release"`
+	Snapshot *PistonMetaId `json:"snapshot"`
 }
 
 // PistonMetaVersionData is used to store version objects.
 type PistonMetaVersionData struct {
-	ID              string `json:"id"`
-	Type            string `json:"type"`
-	URL             string `json:"url"`
-	Time            string `json:"time"`
-	ReleaseTime     string `json:"releaseTime"`
-	Sha1            string `json:"sha1"`
-	ComplianceLevel int    `json:"complianceLevel"`
+	ID              *PistonMetaId `json:"id"`
+	Type            string        `json:"type"`
+	URL             string        `json:"url"`
+	Time            string        `json:"time"`
+	ReleaseTime     string        `json:"releaseTime"`
+	Sha1            string        `json:"sha1"`
+	ComplianceLevel int           `json:"complianceLevel"`
 }

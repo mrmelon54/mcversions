@@ -36,8 +36,8 @@ const (
 )
 
 type loadingStateMsg struct {
-	loadingState
-	error
+	state loadingState
+	err   error
 }
 
 // =====
@@ -60,8 +60,8 @@ func (m LoadingModel) Update(msg tea.Msg) (LoadingModel, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case loadingStateMsg:
-		m.state = msg.loadingState
-		m.err = msg.error
+		m.state = msg.state
+		m.err = msg.err
 	}
 
 	m.spinner, cmd = m.spinner.Update(msg)

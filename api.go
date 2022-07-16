@@ -36,6 +36,10 @@ func canRepeatAfterGrab(err error) bool {
 func runAndCheckMem(cb func() error) error {
 	err := cb()
 	if err != nil {
+		err := defaultMcv.Grab()
+		if err != nil {
+			return err
+		}
 		if canRepeatAfterGrab(err) {
 			return cb()
 		}
@@ -45,7 +49,7 @@ func runAndCheckMem(cb func() error) error {
 }
 
 // Version is a utility function to get version download information using the specific ID
-func Version(id string) (*structure.PistonMetaVersionData, error) {
+func Version(id *structure.PistonMetaId) (*structure.PistonMetaVersionData, error) {
 	mcv, err := checkDefaultMcVersions()
 	if err != nil {
 		return nil, err
@@ -90,4 +94,18 @@ func ListVersions() ([]*structure.PistonMetaVersionData, error) {
 		return err
 	})
 	return data, err
+}
+
+func VersionPackage(id *structure.PistonMetaId) (*structure.PistonMetaPackage, error) {
+	mcv, err := checkDefaultMcVersions()
+	if err != nil {
+		return nil, err
+	}
+
+	var out *structure.PistonMetaPackage
+	err = runAndCheckMem(func() error {
+		out, err = mcv.GetVersionPackage(id)
+		return err
+	})
+	return out, err
 }

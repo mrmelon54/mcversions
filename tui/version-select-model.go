@@ -14,6 +14,7 @@ var arrowIcon = lipgloss.NewStyle().Foreground(lipgloss.Color("#5555ff")).Bold(t
 type VersionSelectModel struct {
 	bg            *Background
 	input         textinput.Model
+	version       *structure.PistonMetaVersionData
 	action        int
 	vSelChoice    int
 	vChoice       int
@@ -21,6 +22,8 @@ type VersionSelectModel struct {
 	cacheSnapshot *structure.PistonMetaVersionData
 	acCache       []*structure.PistonMetaVersionData
 	acValid       bool
+	packageState  loadingState
+	packageData   *structure.PistonMetaPackage
 }
 
 func NewVersionSelectModel(bg *Background) VersionSelectModel {
@@ -64,22 +67,39 @@ func (m VersionSelectModel) Update(msg tea.Msg) (VersionSelectModel, tea.Cmd) {
 						cmds = append(cmds, textinput.Blink, m.input.Focus())
 					} else {
 						m.action = 2
+						switch m.vSelChoice {
+						case 0:
+							cmds = append(cmds, func() tea.Msg {
+								return setVersionMsg{m.latestRelease()}
+							})
+						case 1:
+							cmds = append(cmds, func() tea.Msg {
+								return setVersionMsg{m.latestSnapshot()}
+							})
+						}
 					}
 				}
 			}
 		}
 	case 1: // search mode
-		if msg, ok := msg.(tea.KeyMsg); ok && msg.Type == tea.KeyEnter {
-			m.action = 2
-			m.input.Blur()
-		} else {
-			v := m.input.Value()
-			m.input, cmd = m.input.Update(msg)
-			v2 := m.input.Value()
-			if v != v2 {
-				m.acCache, m.acValid = m.genAutocompleteVersions()
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			if msg.Type == tea.KeyEnter {
+				m.action = 2
+				m.input.Blur()
+				version := m.genMatchingVersion(m.input.Value())
+				cmds = append(cmds, func() tea.Msg {
+					return setVersionMsg{version}
+				})
+			} else {
+				v := m.input.Value()
+				m.input, cmd = m.input.Update(msg)
+				v2 := m.input.Value()
+				if v != v2 {
+					m.acCache, m.acValid = m.genAutocompleteVersions(m.input.Value())
+				}
+				cmds = append(cmds, cmd)
 			}
-			cmds = append(cmds, cmd)
 		}
 	}
 	return m, tea.Batch(cmds...)
@@ -167,19 +187,23 @@ func (m VersionSelectModel) formatVersionInList(version *structure.PistonMetaVer
 	return fmt.Sprintf(" (%s)", version.ID)
 }
 
-func (m VersionSelectModel) genAutocompleteVersions() ([]*structure.PistonMetaVersionData, bool) {
+func (m VersionSelectModel) genAutocompleteVersions(id string) ([]*structure.PistonMetaVersionData, bool) {
 	if m.bg == nil {
 		return nil, false
 	}
-	v := m.input.Value()
+	v, err := structure.NewPistonMetaId(id)
+	if err != nil {
+		return []*structure.PistonMetaVersionData{}, false
+	}
+
 	ver := m.bg.getAllVersions()
 	var out []*structure.PistonMetaVersionData
 	var valid bool
 	for _, i := range ver {
-		if i.ID == v {
+		if i.ID.Equal(v) {
 			out = append([]*structure.PistonMetaVersionData{i}, out...)
 			valid = true
-		} else if strings.Contains(i.ID, v) {
+		} else if strings.Contains(i.ID.String(), v.String()) {
 			out = append(out, i)
 			if len(out) > 5 {
 				out = out[:5]
@@ -187,4 +211,22 @@ func (m VersionSelectModel) genAutocompleteVersions() ([]*structure.PistonMetaVe
 		}
 	}
 	return out, valid
+}
+
+func (m VersionSelectModel) genMatchingVersion(id string) *structure.PistonMetaVersionData {
+	if m.bg == nil {
+		return nil
+	}
+	v, err := structure.NewPistonMetaId(id)
+	if err != nil {
+		return nil
+	}
+
+	ver := m.bg.getAllVersions()
+	for _, i := range ver {
+		if i.ID.Equal(v) {
+			return i
+		}
+	}
+	return nil
 }

@@ -3,36 +3,35 @@ package main
 import (
 	"code.mrmelon54.xyz/sean/go-mcversions"
 	"code.mrmelon54.xyz/sean/go-mcversions/structure"
-	"crypto/sha1"
-	"encoding/hex"
+	"code.mrmelon54.xyz/sean/go-mcversions/utils"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"path"
-	"regexp"
-	"strings"
+	"github.com/Masterminds/semver/v3"
 )
 
 func rawMode(f cliFlags) {
 	switch {
-	case f.listAction:
+	case f.listAction != "":
 		listAction(f)
-	case f.infoAction:
+	case f.infoAction != "":
 		infoAction(f)
-	case f.dlAction:
+	case f.dlAction != "":
 		dlAction(f)
 	}
 }
 
 func listAction(f cliFlags) {
-	if f.pattern == "" {
+	if f.listAction == "" {
 		fmt.Println("Set a pattern to find matching versions")
-		fmt.Println("  mcversions -list -v 1.18*")
-		fmt.Println("  mcversions -list -v 1.16-*")
+		fmt.Println("  mcversions -list ~1.18")
+		fmt.Println("  mcversions -list ~1.16.3")
 		return
 	}
-	reg := "^" + strings.ReplaceAll(regexp.QuoteMeta(f.pattern), "\\*", ".*?") + "$"
+
+	con, err := semver.NewConstraint(f.listAction)
+	if err != nil {
+		fmt.Printf("Invalid constraint string: %s\n", f.listAction)
+		return
+	}
 
 	mcv, err := mcversions.NewMCVersions()
 	if err != nil {
@@ -51,18 +50,17 @@ func listAction(f cliFlags) {
 		return
 	}
 	for i := 0; i < len(versions); i++ {
-		matched, _ := regexp.MatchString(reg, versions[i].ID)
-		if f.pattern == "all" || versions[i].Type == f.pattern || versions[i].ID == f.pattern || matched {
+		if f.listAction == "all" || versions[i].Type == f.listAction || structure.PistonMetaIdCheckConstraints(versions[i].ID, con) {
 			fmt.Printf(" - %s %s\n", versions[i].Type, versions[i].ID)
 		}
 	}
 }
 
 func infoAction(f cliFlags) {
-	if f.pattern == "" {
+	if f.infoAction == "" {
 		fmt.Println("Set a version ID")
-		fmt.Println("  mcversions -info -v 1.18.2")
-		fmt.Println("  mcversions -info -v 1.16.5")
+		fmt.Println("  mcversions -info 1.18.2")
+		fmt.Println("  mcversions -info 1.16.5")
 		return
 	}
 
@@ -77,158 +75,85 @@ func infoAction(f cliFlags) {
 		return
 	}
 	fmt.Printf("Minecraft version info:\n")
-	version, err := mcv.GetVersion(f.pattern)
+	ver, err := structure.NewPistonMetaId(f.infoAction)
+	if err != nil {
+		fmt.Printf("Invalid version code: %s\n", err)
+		return
+	}
+	version, err := mcv.GetVersion(ver)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
 	}
 	fmt.Printf("  ID: %s\n", version.ID)
 	fmt.Printf("  Type: %s\n", version.Type)
+	fmt.Printf("  URL: %s\n", version.URL)
 	fmt.Printf("  Time: %s\n", version.Time)
 	fmt.Printf("  Release Time: %s\n", version.ReleaseTime)
+	fmt.Printf("  SHA1: %s\n", version.Sha1)
+	fmt.Printf("  Compliance Level: %d\n", version.ComplianceLevel)
+	fmt.Printf("\nDownload:\n")
+	fmt.Printf("  Client: mcversions -dl %s -client\n", version.ID)
+	fmt.Printf("  Client Mappings: mcversions -dl %s -client-mappings\n", version.ID)
+	fmt.Printf("  Server: mcversions -dl %s -server\n", version.ID)
+	fmt.Printf("  Server Mappings: mcversions -dl %s -server-mappings\n", version.ID)
 }
 
 func dlAction(f cliFlags) {
-	var version *structure.PistonMetaVersionData
 	var err error
-	switch f.pattern {
+	var ver *structure.PistonMetaId
+	switch f.dlAction {
 	case "release":
-		version, err = mcversions.LatestRelease()
+		version, err := mcversions.LatestRelease()
 		if err != nil {
 			fmt.Println("Failed to get latest release metadata")
 			return
 		}
+		ver = version.ID
 	case "snapshot":
-		version, err = mcversions.LatestSnapshot()
+		version, err := mcversions.LatestSnapshot()
 		if err != nil {
 			fmt.Println("Failed to get latest snapshot metadata")
 			return
 		}
+		ver = version.ID
 	default:
-		version, err = mcversions.Version(f.pattern)
+		ver, err = structure.NewPistonMetaId(f.dlAction)
 		if err != nil {
-			fmt.Printf("Failed to get version: '%s'\n", f.pattern)
+			fmt.Printf("Invalid version code: %s\n", err)
+			return
 		}
 	}
 
-	meta, err := mcversions.NewPistonMeta(version.URL)
+	if ver == nil {
+		fmt.Printf("Failed to load version data for %s\n", f.dlAction)
+		return
+	}
+
+	meta, err := mcversions.VersionPackage(ver)
 	if err != nil {
-		fmt.Printf("Failed to get piston meta: '%s' (%s)\n", f.pattern, version.ID)
+		fmt.Printf("Failed to get piston meta: %s\n", f.dlAction)
+		return
+	}
+
+	if meta == nil {
+		fmt.Printf("Failed to load download data for %s\n", f.dlAction)
+		return
 	}
 
 	switch {
 	case f.dlClient:
-		downloadJar(version.ID, *meta.GetClient())
+		_, err = utils.DownloadJar(meta.ID, *meta.Downloads.Client)
+	case f.dlClientMappings:
+		_, err = utils.DownloadJar(meta.ID, *meta.Downloads.ClientMappings)
 	case f.dlServer:
-		downloadJar(version.ID, *meta.GetServer())
+		_, err = utils.DownloadJar(meta.ID, *meta.Downloads.Server)
+	case f.dlServerMappings:
+		_, err = utils.DownloadJar(meta.ID, *meta.Downloads.ServerMappings)
+	default:
+		err = nil
+	}
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
 	}
 }
-
-func downloadJar(id string, dd structure.PistonMetaPackageDownloadsData) int64 {
-	filename := id + "-" + path.Base(dd.URL)
-	_, err := os.Stat(filename)
-	if !os.IsNotExist(err) {
-		fmt.Printf("Error: file already exists\n")
-		return 0
-	}
-	out, err := os.Create(filename)
-	if err != nil {
-		fmt.Printf("Error creating output file\n")
-		return 0
-	}
-	defer func(out *os.File) {
-		_ = out.Close()
-	}(out)
-	resp, err := http.Get(dd.URL)
-	if err != nil {
-		fmt.Printf("Error starting download\n")
-		return 0
-	}
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(resp.Body)
-
-	h := sha1.New()
-
-	// Connect 'out' and 'h' as a single writer
-	w := io.MultiWriter(out, h)
-
-	n, err := io.Copy(w, resp.Body)
-	if err != nil {
-		fmt.Printf("Error during download\n")
-		return 0
-	}
-	defer func(out *os.File) {
-		_ = out.Close()
-	}(out)
-
-	if n == dd.Size {
-		fmt.Printf("Download size matches\n")
-	} else {
-		fmt.Printf("Incorrect download size\n")
-		return 0
-	}
-
-	sha1str := h.Sum(nil)
-	if hex.EncodeToString(sha1str) == dd.Sha1 {
-		fmt.Printf("Sha1 hashes match so the download is probably safe\n")
-	} else {
-		fmt.Printf("Sha1 hashes don't match... deleting it for your safety\n")
-		err = os.Remove(filename)
-		if err != nil {
-			fmt.Println("Failed to remove the unsafe file:", err)
-			return 0
-		}
-		return 0
-	}
-	return n
-}
-
-/*
-
-	// Details options
-	if len(os.Args) == 2 {
-		if os.Args[1] == "list" {
-			fmt.Printf("Usage 'mcversions list <all/release/snapshot/old_alpha/old_beta/pattern>'\n")
-			return
-		}
-
-		mcv, err := mcversions.NewMCVersions()
-		if err != nil {
-			fmt.Printf("Failed to load Minecraft versions\n")
-			return
-		}
-		versionid := os.Args[1]
-		if os.Args[1] == "release" {
-			versionid = mcv.GetLatestRelease()
-		} else if os.Args[1] == "snapshot" {
-			versionid = mcv.GetLatestSnapshot()
-		}
-		v, err := mcv.GetVersion(versionid)
-		if err != nil {
-			fmt.Printf("Failed to get version information\n")
-			return
-		}
-		fmt.Printf("ID: %s\n", v.GetID())
-		fmt.Printf("Type: %s\n", v.GetType())
-		fmt.Printf("Release time: %s\n", v.GetReleaseTime())
-		fmt.Printf("Client:\n")
-		fmt.Printf(" - URL: %s\n", v.GetClient().URL)
-		fmt.Printf(" - Sha1: %s\n", v.GetClient().Sha1)
-		fmt.Printf(" - Size: %v\n", v.GetClient().Size)
-		fmt.Printf("Server:\n")
-		fmt.Printf(" - URL: %s\n", v.GetServer().URL)
-		fmt.Printf(" - Sha1: %s\n", v.GetServer().Sha1)
-		fmt.Printf(" - Size: %v\n", v.GetServer().Size)
-		return
-	}
-
-	// Help options
-	if len(os.Args) == 1 {
-		fmt.Printf("mcversions list <all/release/snapshot/old_alpha/old_beta/pattern> - List all versions of the specified type\n")
-		fmt.Printf("mcversions <version id/release/snapshot> - Get details about the version\n")
-		fmt.Printf("mcversions <version id/release/snapshot> <client/server> - Download the client/server jar\n")
-		return
-	}
-}
-*/

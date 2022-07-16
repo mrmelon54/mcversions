@@ -7,7 +7,7 @@ type PistonMetaPackage struct {
 	Assets                 string                        `json:"assets"`
 	ComplianceLevel        int                           `json:"complianceLevel"`
 	Downloads              *PistonMetaPackageDownloads   `json:"downloads"`
-	ID                     string                        `json:"id"`
+	ID                     *PistonMetaId                 `json:"id"`
 	JavaVersion            *PistonMetaPackageJavaVersion `json:"javaVersion"`
 	Libraries              []*PistonMetaPackageLibrary   `json:"libraries"`
 	MainClass              string                        `json:"mainClass"`
@@ -25,11 +25,11 @@ type PistonMetaPackageArguments struct {
 
 // PistonMetaPackageAssetIndex is used to store the asset hashes
 type PistonMetaPackageAssetIndex struct {
-	Id        string `json:"id"`
-	Sha1      string `json:"sha1"`
-	Size      int    `json:"size"`
-	TotalSize int    `json:"totalSize"`
-	Url       string `json:"url"`
+	Id        *PistonMetaId `json:"id"`
+	Sha1      string        `json:"sha1"`
+	Size      int           `json:"size"`
+	TotalSize int           `json:"totalSize"`
+	Url       string        `json:"url"`
 }
 
 // PistonMetaPackageDownloads is used to store the client and server download information

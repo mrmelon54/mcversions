@@ -7,28 +7,30 @@ import (
 )
 
 type cliFlags struct {
-	jsonOutput bool
-	pattern    string
-	listAction bool
-	infoAction bool
-	dlAction   bool
-	dlClient   bool
-	dlServer   bool
+	jsonOutput       bool
+	listAction       string
+	infoAction       string
+	dlAction         string
+	dlClient         bool
+	dlClientMappings bool
+	dlServer         bool
+	dlServerMappings bool
 }
 
 func main() {
 	var f cliFlags
 	flag.BoolVar(&f.jsonOutput, "j", false, "Outputs raw json data")
-	flag.StringVar(&f.pattern, "v", "", "Specify a version of pattern to match")
-	flag.BoolVar(&f.listAction, "list", false, "List action")
-	flag.BoolVar(&f.infoAction, "info", false, "Info action")
-	flag.BoolVar(&f.dlAction, "dl", false, "Download action")
-	flag.BoolVar(&f.dlClient, "client", false, "Interact with client")
-	flag.BoolVar(&f.dlServer, "server", false, "Interact with server")
+	flag.StringVar(&f.listAction, "list", "", "List action: -list ~1.18")
+	flag.StringVar(&f.infoAction, "info", "", "Info action: -info 1.16.5")
+	flag.StringVar(&f.dlAction, "dl", "", "Download action: -dl 1.12.2 [-client] [-server]")
+	flag.BoolVar(&f.dlClient, "client", false, "Download client: -dl 1.10 -client")
+	flag.BoolVar(&f.dlClientMappings, "client-mappings", false, "Download client: -dl 1.10 -client-mappings")
+	flag.BoolVar(&f.dlServer, "server", false, "Download server: -dl 1.10 -server")
+	flag.BoolVar(&f.dlServerMappings, "server-mappings", false, "Download server: -dl 1.10 -server-mappings")
 	flag.Parse()
 
 	if f != (cliFlags{}) {
-		if !singleBool([]bool{f.listAction, f.infoAction, f.dlAction}) {
+		if !singleString([]string{f.listAction, f.infoAction, f.dlAction}) {
 			fmt.Println("Only one action can be set at a time!")
 			return
 		}
@@ -44,10 +46,10 @@ func main() {
 	tui.Launch()
 }
 
-func singleBool(arr []bool) bool {
+func singleString(arr []string) bool {
 	count := 0
 	for _, i := range arr {
-		if i {
+		if i != "" {
 			count++
 		}
 	}
