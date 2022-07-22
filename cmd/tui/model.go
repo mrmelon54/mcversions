@@ -9,7 +9,11 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
-var arrowDlIcon = lipgloss.NewStyle().Foreground(lipgloss.Color("#ffaa00")).Bold(true).Render("▸")
+var (
+	arrowDlIcon = lipgloss.NewStyle().Foreground(lipgloss.Color("#ffaa00")).Bold(true).Render("▸")
+	footerText  = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	footerDot   = lipgloss.NewStyle().Foreground(lipgloss.Color("236")).Render(" • ")
+)
 
 type Model struct {
 	bg         *Background
@@ -206,7 +210,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() (s string) {
-	s += "\n"
+	s = "\n"
 	if m.err != nil {
 		s += fmt.Sprintf("Oh no:\n%s\n\n", m.err)
 		return
@@ -219,6 +223,15 @@ func (m Model) View() (s string) {
 	if m.appState > 1 {
 		s += "\n\n"
 		s += m.vSelect.View()
+		if m.appState == 2 {
+			s += "\n\n"
+			switch m.vSelect.action {
+			case 0:
+				s += "  " + footerText.Render("up/down: select") + footerDot + footerText.Render("enter: choose") + footerDot + footerText.Render("esc: quit")
+			case 1:
+				s += "  " + footerText.Render("enter: choose") + footerDot + footerText.Render("esc: quit")
+			}
+		}
 	}
 	if m.appState > 2 {
 		s += "\n\n"
@@ -254,11 +267,19 @@ func (m Model) View() (s string) {
 				a = arrowDlIcon
 			}
 			s += fmt.Sprintf("\n  %s Download All (%s)", a, humanize.Bytes(t))
+			if m.appState == 4 {
+				s += "\n\n"
+				s += "  " + footerText.Render("up/down: select") + footerDot + footerText.Render("enter: choose") + footerDot + footerText.Render("esc: quit")
+			}
 		}
 	}
 	if m.appState > 4 {
 		s += "\n\n"
 		s += m.loadDl.View()
+		if m.appState == 5 {
+			s += "\n\n"
+			s += "  " + footerText.Render("esc: quit")
+		}
 	}
 	s += "\n\n"
 	return

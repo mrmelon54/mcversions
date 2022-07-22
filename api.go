@@ -36,8 +36,8 @@ func canRepeatAfterGrab(err error) bool {
 func runAndCheckMem(cb func() error) error {
 	err := cb()
 	if err != nil {
-		err := defaultMcv.Grab()
-		if err != nil {
+		err2 := defaultMcv.Grab()
+		if err2 != nil {
 			return err
 		}
 		if canRepeatAfterGrab(err) {
@@ -69,7 +69,13 @@ func LatestRelease() (*structure.PistonMetaVersionData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Version(mcv.data.Latest.Release)
+
+	var data *structure.PistonMetaVersionData
+	err = runAndCheckMem(func() error {
+		data, err = mcv.LatestRelease()
+		return err
+	})
+	return data, err
 }
 
 // LatestSnapshot is a utility function to get the download information for the latest snapshot
@@ -78,7 +84,13 @@ func LatestSnapshot() (*structure.PistonMetaVersionData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Version(mcv.data.Latest.Snapshot)
+
+	var data *structure.PistonMetaVersionData
+	err = runAndCheckMem(func() error {
+		data, err = mcv.LatestSnapshot()
+		return err
+	})
+	return data, err
 }
 
 // ListVersions is a utility function to get the download information for all versions

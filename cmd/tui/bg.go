@@ -4,7 +4,6 @@ import (
 	"code.mrmelon54.xyz/sean/go-mcversions"
 	"code.mrmelon54.xyz/sean/go-mcversions/structure"
 	"code.mrmelon54.xyz/sean/go-mcversions/utils"
-	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -57,7 +56,6 @@ func (b *Background) fetchRemoteData() {
 }
 
 func (b *Background) fetchPackageMeta(id *structure.PistonMetaId) {
-	fmt.Printf("fetchPackageMeta(%s)\n", id)
 	if !b.getMCV() {
 		return
 	}

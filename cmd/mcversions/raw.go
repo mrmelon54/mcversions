@@ -4,8 +4,10 @@ import (
 	"code.mrmelon54.xyz/sean/go-mcversions"
 	"code.mrmelon54.xyz/sean/go-mcversions/structure"
 	"code.mrmelon54.xyz/sean/go-mcversions/utils"
+	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
+	"os"
 )
 
 func rawMode(f cliFlags) {
@@ -19,8 +21,15 @@ func rawMode(f cliFlags) {
 	}
 }
 
+func closeForJson(f cliFlags) {
+	if f.jsonOutput {
+		os.Exit(1)
+	}
+}
+
 func listAction(f cliFlags) {
 	if f.listAction == "" {
+		closeForJson(f)
 		fmt.Println("Set a pattern to find matching versions")
 		fmt.Println("  mcversions -list ~1.18")
 		fmt.Println("  mcversions -list ~1.16.3")
@@ -29,35 +38,53 @@ func listAction(f cliFlags) {
 
 	con, err := semver.NewConstraint(f.listAction)
 	if err != nil {
+		closeForJson(f)
 		fmt.Printf("Invalid constraint string: %s\n", f.listAction)
 		return
 	}
 
 	mcv, err := mcversions.NewMCVersions()
 	if err != nil {
+		closeForJson(f)
 		fmt.Printf("Failed to load Minecraft versions: %s\n", err)
 		return
 	}
 	err = mcv.Grab()
 	if err != nil {
+		closeForJson(f)
 		fmt.Printf("Failed to get version metadata: %s\n", err)
 		return
 	}
-	fmt.Printf("Minecraft versions list:\n")
+	if !f.jsonOutput {
+		fmt.Printf("Minecraft versions list:\n")
+	}
 	versions, err := mcv.ListVersions()
 	if err != nil {
+		closeForJson(f)
 		fmt.Printf("Error: %s\n", err)
 		return
 	}
+	var a []*structure.PistonMetaVersionData
 	for i := 0; i < len(versions); i++ {
 		if f.listAction == "all" || versions[i].Type == f.listAction || structure.PistonMetaIdCheckConstraints(versions[i].ID, con) {
-			fmt.Printf(" - %s %s\n", versions[i].Type, versions[i].ID)
+			a = append(a, versions[i])
+		}
+	}
+	if f.jsonOutput {
+		err = json.NewEncoder(os.Stdout).Encode(a)
+		if err != nil {
+			closeForJson(f)
+		}
+	} else {
+		for _, i := range a {
+			fmt.Printf(" - %s %s\n", i.Type, i.ID)
 		}
 	}
 }
 
 func infoAction(f cliFlags) {
 	if f.infoAction == "" {
+		closeForJson(f)
 		fmt.Println("Set a version ID")
 		fmt.Println("  mcversions -info 1.18.2")
 		fmt.Println("  mcversions -info 1.16.5")
@@ -66,37 +93,48 @@ func infoAction(f cliFlags) {
 
 	mcv, err := mcversions.NewMCVersions()
 	if err != nil {
+		closeForJson(f)
 		fmt.Printf("Failed to load Minecraft versions: %s\n", err)
 		return
 	}
 	err = mcv.Grab()
 	if err != nil {
+		closeForJson(f)
 		fmt.Printf("Failed to get version metadata: %s\n", err)
 		return
 	}
 	fmt.Printf("Minecraft version info:\n")
 	ver, err := structure.NewPistonMetaId(f.infoAction)
 	if err != nil {
+		closeForJson(f)
 		fmt.Printf("Invalid version code: %s\n", err)
 		return
 	}
 	version, err := mcv.GetVersion(ver)
 	if err != nil {
+		closeForJson(f)
 		fmt.Printf("Error: %s\n", err)
 		return
 	}
-	fmt.Printf("  ID: %s\n", version.ID)
-	fmt.Printf("  Type: %s\n", version.Type)
-	fmt.Printf("  URL: %s\n", version.URL)
-	fmt.Printf("  Time: %s\n", version.Time)
-	fmt.Printf("  Release Time: %s\n", version.ReleaseTime)
-	fmt.Printf("  SHA1: %s\n", version.Sha1)
-	fmt.Printf("  Compliance Level: %d\n", version.ComplianceLevel)
-	fmt.Printf("\nDownload:\n")
-	fmt.Printf("  Client: mcversions -dl %s -client\n", version.ID)
-	fmt.Printf("  Client Mappings: mcversions -dl %s -client-mappings\n", version.ID)
-	fmt.Printf("  Server: mcversions -dl %s -server\n", version.ID)
-	fmt.Printf("  Server Mappings: mcversions -dl %s -server-mappings\n", version.ID)
+	if f.jsonOutput {
+		err = json.NewEncoder(os.Stdout).Encode(version)
+		if err != nil {
+			closeForJson(f)
+		}
+	} else {
+		fmt.Printf("  ID: %s\n", version.ID)
+		fmt.Printf("  Type: %s\n", version.Type)
+		fmt.Printf("  URL: %s\n", version.URL)
+		fmt.Printf("  Time: %s\n", version.Time)
+		fmt.Printf("  Release Time: %s\n", version.ReleaseTime)
+		fmt.Printf("  SHA1: %s\n", version.Sha1)
+		fmt.Printf("  Compliance Level: %d\n", version.ComplianceLevel)
+		fmt.Printf("\nDownload:\n")
+		fmt.Printf("  Client: mcversions -dl %s -client\n", version.ID)
+		fmt.Printf("  Client Mappings: mcversions -dl %s -client-mappings\n", version.ID)
+		fmt.Printf("  Server: mcversions -dl %s -server\n", version.ID)
+		fmt.Printf("  Server Mappings: mcversions -dl %s -server-mappings\n", version.ID)
+	}
 }
 
 func dlAction(f cliFlags) {
@@ -106,6 +144,7 @@ func dlAction(f cliFlags) {
 	case "release":
 		version, err := mcversions.LatestRelease()
 		if err != nil {
+			closeForJson(f)
 			fmt.Println("Failed to get latest release metadata")
 			return
 		}
@@ -113,6 +152,7 @@ func dlAction(f cliFlags) {
 	case "snapshot":
 		version, err := mcversions.LatestSnapshot()
 		if err != nil {
+			closeForJson(f)
 			fmt.Println("Failed to get latest snapshot metadata")
 			return
 		}
@@ -120,25 +160,34 @@ func dlAction(f cliFlags) {
 	default:
 		ver, err = structure.NewPistonMetaId(f.dlAction)
 		if err != nil {
+			closeForJson(f)
 			fmt.Printf("Invalid version code: %s\n", err)
 			return
 		}
 	}
 
 	if ver == nil {
+		closeForJson(f)
 		fmt.Printf("Failed to load version data for %s\n", f.dlAction)
 		return
 	}
 
 	meta, err := mcversions.VersionPackage(ver)
 	if err != nil {
+		closeForJson(f)
 		fmt.Printf("Failed to get piston meta: %s\n", f.dlAction)
 		return
 	}
 
 	if meta == nil {
+		closeForJson(f)
 		fmt.Printf("Failed to load download data for %s\n", f.dlAction)
 		return
+	}
+
+	if f.jsonOutput {
+		_ = json.NewEncoder(os.Stdout).Encode(meta)
+		closeForJson(f)
 	}
 
 	switch {
@@ -151,7 +200,7 @@ func dlAction(f cliFlags) {
 	case f.dlServerMappings:
 		_, err = utils.DownloadJar(meta.ID, *meta.Downloads.ServerMappings)
 	default:
-		err = nil
+		err = fmt.Errorf("no download options selected: -client, -client-mappings, -server, -server-mappings")
 	}
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)

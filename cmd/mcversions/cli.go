@@ -1,7 +1,7 @@
 package main
 
 import (
-	"code.mrmelon54.xyz/sean/go-mcversions/tui"
+	"code.mrmelon54.xyz/sean/go-mcversions/cmd/tui"
 	"flag"
 	"fmt"
 )
@@ -35,10 +35,6 @@ func main() {
 			return
 		}
 
-		if f.jsonOutput {
-			jsonMode(f)
-			return
-		}
 		rawMode(f)
 		return
 	}
