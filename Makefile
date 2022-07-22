@@ -22,12 +22,12 @@ test:
 
 clean:
 	go clean
-	rm ${BIN}
+	rm -f ${BIN}
 
 package:
 	./scripts/package-mcversions.sh
 
 deb:
 	make clean && \
-	make all && \
+	make build && \
 	make package

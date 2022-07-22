@@ -1,9 +1,9 @@
 package mcversions
 
 import (
-	"code.mrmelon54.xyz/sean/go-mcversions/structure"
 	"encoding/json"
 	"fmt"
+	"github.com/mrmelon54/mcversions/structure"
 	"github.com/wessie/appdirs"
 	"io"
 	"os"

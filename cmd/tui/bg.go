@@ -1,10 +1,10 @@
 package tui
 
 import (
-	"code.mrmelon54.xyz/sean/go-mcversions"
-	"code.mrmelon54.xyz/sean/go-mcversions/structure"
-	"code.mrmelon54.xyz/sean/go-mcversions/utils"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/mrmelon54/mcversions"
+	"github.com/mrmelon54/mcversions/structure"
+	"github.com/mrmelon54/mcversions/utils"
 )
 
 type Background struct {

@@ -1,11 +1,11 @@
 package tui
 
 import (
-	"code.mrmelon54.xyz/sean/go-mcversions/structure"
 	"fmt"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mrmelon54/mcversions/structure"
 	"strings"
 )
 

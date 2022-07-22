@@ -1,9 +1,9 @@
 package main
 
 import (
-	"code.mrmelon54.xyz/sean/go-mcversions/cmd/tui"
 	"flag"
 	"fmt"
+	"github.com/mrmelon54/mcversions/cmd/tui"
 )
 
 type cliFlags struct {

@@ -1,8 +1,8 @@
 package mcversions
 
 import (
-	"code.mrmelon54.xyz/sean/go-mcversions/structure"
 	"errors"
+	"github.com/mrmelon54/mcversions/structure"
 )
 
 var (

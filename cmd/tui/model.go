@@ -1,12 +1,12 @@
 package tui
 
 import (
-	"code.mrmelon54.xyz/sean/go-mcversions/structure"
 	"fmt"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/dustin/go-humanize"
+	"github.com/mrmelon54/mcversions/structure"
 )
 
 var (

@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"code.mrmelon54.xyz/sean/go-mcversions/structure"
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
+	"github.com/mrmelon54/mcversions/structure"
 	"io"
 	"net/http"
 	"os"

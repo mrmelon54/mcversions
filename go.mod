@@ -1,4 +1,4 @@
-module code.mrmelon54.xyz/sean/go-mcversions
+module github.com/mrmelon54/mcversions
 
 go 1.18
 
