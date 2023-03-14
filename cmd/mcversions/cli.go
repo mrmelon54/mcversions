@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/mrmelon54/mcversions/cmd/tui"
+	"github.com/MrMelon54/mcversions/v3/cmd/tui"
 )
 
 type cliFlags struct {

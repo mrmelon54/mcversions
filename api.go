@@ -2,7 +2,7 @@ package mcversions
 
 import (
 	"errors"
-	"github.com/mrmelon54/mcversions/structure"
+	"github.com/MrMelon54/mcversions/v3/structure"
 )
 
 var (

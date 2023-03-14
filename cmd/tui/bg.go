@@ -1,10 +1,10 @@
 package tui
 
 import (
+	"github.com/MrMelon54/mcversions/v3"
+	"github.com/MrMelon54/mcversions/v3/structure"
+	"github.com/MrMelon54/mcversions/v3/utils"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/mrmelon54/mcversions"
-	"github.com/mrmelon54/mcversions/structure"
-	"github.com/mrmelon54/mcversions/utils"
 )
 
 type Background struct {

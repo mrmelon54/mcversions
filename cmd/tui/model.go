@@ -2,11 +2,11 @@ package tui
 
 import (
 	"fmt"
+	"github.com/MrMelon54/mcversions/v3/structure"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/dustin/go-humanize"
-	"github.com/mrmelon54/mcversions/structure"
 )
 
 var (

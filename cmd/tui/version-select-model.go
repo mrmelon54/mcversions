@@ -2,10 +2,10 @@ package tui
 
 import (
 	"fmt"
+	"github.com/MrMelon54/mcversions/v3/structure"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/mrmelon54/mcversions/structure"
 	"strings"
 )
 

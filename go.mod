@@ -1,4 +1,4 @@
-module github.com/mrmelon54/mcversions
+module github.com/MrMelon54/mcversions/v3
 
 go 1.18
 

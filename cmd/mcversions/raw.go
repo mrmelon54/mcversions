@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
-	"github.com/mrmelon54/mcversions"
-	"github.com/mrmelon54/mcversions/structure"
-	"github.com/mrmelon54/mcversions/utils"
+	"github.com/MrMelon54/mcversions/v3"
+	"github.com/MrMelon54/mcversions/v3/structure"
+	"github.com/MrMelon54/mcversions/v3/utils"
 	"os"
 )
 

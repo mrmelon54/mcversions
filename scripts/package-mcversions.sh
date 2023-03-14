@@ -39,5 +39,5 @@ done
 echo "Building package"
 dpkg-deb --build "$PACK"
 echo "Signing package"
-dpkg-sig -k OnPointCoding --sign repo "$PACK.deb"
+dpkg-sig -k github@mrmelon54.com --sign repo "$PACK.deb"
 echo "Package complete:"

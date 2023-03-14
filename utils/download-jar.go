@@ -4,7 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
-	"github.com/mrmelon54/mcversions/structure"
+	"github.com/MrMelon54/mcversions/v3/structure"
 	"io"
 	"net/http"
 	"os"
