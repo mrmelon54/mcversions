@@ -15,7 +15,7 @@ func Request(url string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "mcversions/1.0")
+	req.Header.Set("User-Agent", "mcversions/1.0.0 (+https://github.com/MrMelon54/mcversions)")
 
 	res, err := mcVersionsClient.Do(req)
 	if err != nil {
